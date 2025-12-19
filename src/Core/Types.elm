@@ -10,6 +10,7 @@ type Page = ConfigPage | SimulationPage
 type alias ConfigState =
     { grid : Grid
     , rules : Rules
+    , ruleInput : String -- <--- Agregamos esto para el campo de texto
     , width : Int
     , height : Int
     }
