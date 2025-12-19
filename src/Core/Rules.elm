@@ -19,7 +19,12 @@ parseRules str =
     in
     case String.split "/" cleanStr of
         [ birthPart, survivePart ] ->
-            if String.startsWith "B" birthPart && String.startsWith "S" survivePart then
+            if 
+                String.startsWith "B" birthPart && 
+                String.startsWith "S" survivePart &&
+                String.all (\c -> c>='0' && c<='8') (String.dropLeft 1 birthPart) &&
+                String.all (\c -> c>='0' && c<='8') (String.dropLeft 1 survivePart)
+            then
                 Just
                     { birth = extractNumbers birthPart
                     , survive = extractNumbers survivePart
