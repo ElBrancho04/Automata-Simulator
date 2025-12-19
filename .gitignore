@@ -1,0 +1,20 @@
+# Elm
+elm-stuff/
+*.elmi
+*.elmo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Build output
+main.js
+index.html
+dist/
+
+# Node
+node_modules/
