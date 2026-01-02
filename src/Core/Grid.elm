@@ -28,18 +28,28 @@ countLiveCells grid =
         |> List.filter (\cell -> cell == Alive)
         |> List.length
 
--- Obtener vecinos de una celda
+
 getNeighbors : Position -> Grid -> List Cell
 getNeighbors (row, col) grid =
     let
+       
+        (width, height) = getSize grid
+
         offsets = [(-1,-1), (-1,0), (-1,1),
                    (0,-1),          (0,1),
                    (1,-1),  (1,0),  (1,1)]
         
-        positions = List.map (\(dr, dc) -> (row + dr, col + dc)) offsets
+       
+        positions = 
+            List.map 
+                (\(dr, dc) -> 
+                    ( modBy height (row + dr)
+                    , modBy width  (col + dc)
+                    )
+                ) 
+                offsets
     in
     List.map (\pos -> getCell pos grid) positions
-
 -- Contar vecinos vivos
 countLiveNeighbors : Position -> Grid -> Int
 countLiveNeighbors pos grid =
