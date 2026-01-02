@@ -2,6 +2,7 @@ module View.Main exposing (main)
 
 import Browser
 import Core.Grid exposing (getSize)
+import Core.Patterns
 import Core.Rules exposing (isValidRuleString)
 import Core.Types exposing (..)
 import Html exposing (..)
@@ -41,7 +42,7 @@ viewConfigPage config =
         [ h3 [] [ text "Configuración Inicial" ]
         , div []
             [ text "Dibuja el patrón inicial haciendo click en las celdas." ]
-                , div [ style "display" "flex", style "gap" "10px", style "margin-bottom" "10px" ]
+        , div [ style "display" "flex", style "gap" "10px", style "margin-bottom" "10px" ]
             [ button
                 [ onClick RandomizeGrid
                 , style "padding" "8px 15px"
@@ -52,8 +53,14 @@ viewConfigPage config =
                 , style "border-radius" "4px"
                 ]
                 [ text "🎲 Aleatorio" ]
-            ]
+            ]    
 
+        , div [ style "margin-bottom" "10px" ]
+    [ text "Patrones: "
+    , button [ onClick (LoadPattern Core.Patterns.glider), style "margin" "0 5px" ] [ text "🚀 Glider" ]
+    , button [ onClick (LoadPattern Core.Patterns.lwss), style "margin" "0 5px" ] [ text "🛸 Nave" ]
+    , button [ onClick (LoadPattern Core.Patterns.pulsar), style "margin" "0 5px" ] [ text "✨ Pulsar" ]
+    ]
         -- La Grilla (Interactiva)
         , viewGrid config.grid True
 

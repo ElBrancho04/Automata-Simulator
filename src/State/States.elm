@@ -4,9 +4,9 @@ import Core.Automata exposing (nextGeneration)
 import Core.Grid exposing (emptyGrid, toggleCell)
 import Core.Rules exposing (parseRules)
 import Core.Types exposing (..)
+import Core.Patterns 
 import Time
 import Random
-
 -- 1. MENSAJES
 -- Definimos todo lo que puede ocurrir en la aplicación
 type Msg
@@ -22,13 +22,14 @@ type Msg
     | StopSimulation
     | RandomizeGrid
     | GridGenerated Grid
+    | LoadPattern (List Position)
 -- 2. INIT
 -- Estado inicial de la aplicación
 init : ( AppState, Cmd Msg )
 init =
     let
-        defaultWidth = 20
-        defaultHeight = 20
+        defaultWidth = 30
+        defaultHeight = 30
         defaultRules = { birth = [3], survive = [2, 3] } -- Conway clásico
         defaultRuleStr = "B3/S23"
         
@@ -162,7 +163,27 @@ update msg model =
             ( { model | configState = newConfig }
             , Cmd.none 
             )
+        LoadPattern patternPositions ->
+            let
+                config = model.configState
+                
+                -- Función auxiliar para aplicar offset (para que no aparezca en la esquina 0,0)
+                offset = (5, 5) -- Movemos todo 5 celdas abajo y a la derecha
+                
+                adjustedPattern =
+                    List.map (\(r, c) -> (r + Tuple.first offset, c + Tuple.second offset)) patternPositions
 
+                -- APLICAMOS EL PATRÓN SOBRE LA GRILLA ACTUAL
+                -- Usamos toggleCell repetidamente para cada punto del patrón
+                newGrid = 
+                    List.foldl 
+                        Core.Grid.toggleCell 
+                        config.grid 
+                        adjustedPattern
+                
+                newConfig = { config | grid = newGrid }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
 -- 4. SUBSCRIPTIONS
 -- Aquí manejamos el "loop" de tiempo cuando el juego está corriendo
 subscriptions : AppState -> Sub Msg
@@ -192,3 +213,5 @@ randomGridGenerator width height =
     in
     -- Generador para la grilla (lista de filas)
     Random.list height rowGenerator
+
+    
