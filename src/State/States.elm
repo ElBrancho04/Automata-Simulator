@@ -5,6 +5,7 @@ import Core.Grid exposing (emptyGrid, toggleCell)
 import Core.Rules exposing (parseRules)
 import Core.Types exposing (..)
 import Time
+import Random
 
 -- 1. MENSAJES
 -- Definimos todo lo que puede ocurrir en la aplicación
@@ -19,7 +20,8 @@ type Msg
     | TogglePlay
     | StepGeneration
     | StopSimulation
-
+    | RandomizeGrid
+    | GridGenerated Grid
 -- 2. INIT
 -- Estado inicial de la aplicación
 init : ( AppState, Cmd Msg )
@@ -142,6 +144,24 @@ update msg model =
               }
             , Cmd.none 
             )
+        RandomizeGrid ->
+            let
+                w = model.configState.width
+                h = model.configState.height
+            in
+            ( model
+            , Random.generate GridGenerated (randomGridGenerator w h)
+            )
+
+        -- 2. Elm nos devuelve la grilla generada
+        GridGenerated newRandomGrid ->
+            let
+                config = model.configState
+                newConfig = { config | grid = newRandomGrid }
+            in
+            ( { model | configState = newConfig }
+            , Cmd.none 
+            )
 
 -- 4. SUBSCRIPTIONS
 -- Aquí manejamos el "loop" de tiempo cuando el juego está corriendo
@@ -157,3 +177,18 @@ subscriptions model =
                 Time.every 500 Tick
             else
                 Sub.none
+
+-- GENERADOR DE GRILLA ALEATORIA
+randomGridGenerator : Int -> Int -> Random.Generator Grid
+randomGridGenerator width height =
+    let
+        -- Generador para una sola celda (20% viva, 80% muerta)
+        cellGenerator =
+            Random.weighted (20, Alive) [ (80, Dead) ]
+        
+        -- Generador para una fila (lista de celdas)
+        rowGenerator =
+            Random.list width cellGenerator
+    in
+    -- Generador para la grilla (lista de filas)
+    Random.list height rowGenerator

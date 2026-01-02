@@ -41,7 +41,19 @@ viewConfigPage config =
         [ h3 [] [ text "Configuración Inicial" ]
         , div []
             [ text "Dibuja el patrón inicial haciendo click en las celdas." ]
-            
+                , div [ style "display" "flex", style "gap" "10px", style "margin-bottom" "10px" ]
+            [ button
+                [ onClick RandomizeGrid
+                , style "padding" "8px 15px"
+                , style "cursor" "pointer"
+                , style "background-color" "#2196F3" -- Azul
+                , style "color" "white"
+                , style "border" "none"
+                , style "border-radius" "4px"
+                ]
+                [ text "🎲 Aleatorio" ]
+            ]
+
         -- La Grilla (Interactiva)
         , viewGrid config.grid True
 
