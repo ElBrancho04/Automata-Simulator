@@ -1,11 +1,14 @@
 module Core.Types exposing (..)
 
+import Array exposing (Array)
+
 type Cell = Alive | Dead
-type alias Grid = List (List Cell)
+type alias Grid = Array (Array Cell)
 type alias Rules = { birth : List Int, survive : List Int }
 type alias Position = (Int, Int)
 
 type Page = ConfigPage | SimulationPage
+type BorderType = Toroidal | Finite
 
 -- Tipos para detección de patrones
 type PatternType
@@ -37,6 +40,10 @@ type alias ConfigState =
     , ruleInput : String 
     , width : Int
     , height : Int
+    , widthInput : String   -- Input temporal para ancho
+    , heightInput : String  -- Input temporal para alto
+    , borderType : BorderType
+    , cellSize : Int
     }
 
 type alias SimulationState =
@@ -48,6 +55,8 @@ type alias SimulationState =
     , history : List Grid
     , detectedPattern : PatternType
     , analysisEnabled : Bool
+    , borderType : BorderType
+    , cellSize : Int
     }
 
 type alias AppState =

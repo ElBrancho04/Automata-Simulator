@@ -1,43 +1,48 @@
 module Core.Grid exposing (..)
 
-import Core.Types exposing (Cell(..),Grid,Position)
+import Array exposing (Array)
+import Core.Types exposing (Cell(..),Grid,Position,BorderType(..))
 
 -- Crear grilla vacía
 emptyGrid : Int -> Int -> Grid
 emptyGrid width height =
-    List.repeat height (List.repeat width Dead)
+    Array.repeat height (Array.repeat width Dead)
 
 -- Obtener celda en posición específica
 getCell : Position -> Grid -> Cell
 getCell (row, col) grid =
-    let
-        maybeRow = List.head (List.drop row grid)
-    in
-    case maybeRow of
-        Just rowList ->
-            case List.head (List.drop col rowList) of
-                Just cell -> cell
-                Nothing -> Dead
-        Nothing -> Dead
+    grid
+        |> Array.get row
+        |> Maybe.andThen (Array.get col)
+        |> Maybe.withDefault Dead
 
 -- Contar celdas vivas en la grilla
 countLiveCells : Grid -> Int
 countLiveCells grid =
     grid
-        |> List.concat
-        |> List.filter (\cell -> cell == Alive)
-        |> List.length
+        |> Array.foldl
+            (\row acc ->
+                acc
+                    + (row
+                        |> Array.filter (\cell -> cell == Alive)
+                        |> Array.length
+                      )
+            )
+            0
 
 
-getNeighbors : Position -> Grid -> List Cell
-getNeighbors (row, col) grid =
+-- Vecinos con borde toroidal (wrap-around)
+getNeighborsToroidal : Position -> Grid -> List Cell
+getNeighborsToroidal (row, col) grid =
     let
        
         (width, height) = getSize grid
 
-        offsets = [(-1,-1), (-1,0), (-1,1),
-                   (0,-1),          (0,1),
-                   (1,-1),  (1,0),  (1,1)]
+        offsets =
+            [ (-1,-1), (-1,0), (-1,1)
+            , (0,-1),          (0,1)
+            , (1,-1),  (1,0),  (1,1)
+            ]
         
        
         positions = 
@@ -50,42 +55,70 @@ getNeighbors (row, col) grid =
                 offsets
     in
     List.map (\pos -> getCell pos grid) positions
--- Contar vecinos vivos
-countLiveNeighbors : Position -> Grid -> Int
-countLiveNeighbors pos grid =
-    getNeighbors pos grid
+
+-- Vecinos con borde finito (fuera de límites = Dead)
+getNeighborsFinite : Position -> Grid -> List Cell
+getNeighborsFinite (row, col) grid =
+    let
+        (width, height) = getSize grid
+
+        offsets =
+            [ (-1,-1), (-1,0), (-1,1)
+            , (0,-1),          (0,1)
+            , (1,-1),  (1,0),  (1,1)
+            ]
+        
+        getCellOrDead : (Int, Int) -> Cell
+        getCellOrDead (r, c) =
+            if r < 0 || r >= height || c < 0 || c >= width then
+                Dead
+            else
+                getCell (r, c) grid
+    in
+    List.map (\(dr, dc) -> getCellOrDead (row + dr, col + dc)) offsets
+
+-- Función principal parametrizada por tipo de borde
+getNeighbors : BorderType -> Position -> Grid -> List Cell
+getNeighbors borderType pos grid =
+    case borderType of
+        Toroidal -> getNeighborsToroidal pos grid
+        Finite -> getNeighborsFinite pos grid
+
+-- Contar vecinos vivos (parametrizado por tipo de borde)
+countLiveNeighbors : BorderType -> Position -> Grid -> Int
+countLiveNeighbors borderType pos grid =
+    getNeighbors borderType pos grid
         |> List.filter (\cell -> cell == Alive)
         |> List.length
 
 -- Toggle celda
 toggleCell : Position -> Grid -> Grid
 toggleCell (row, col) grid =
-    let
-        updateRow r rowList =
-            if r == row then
-                List.indexedMap
-                    (\c cell ->
-                        if c == col then
-                            case cell of
-                                Alive -> Dead
-                                Dead -> Alive
-                        else
-                            cell
-                    )
-                    rowList
-            else
-                rowList
-    in
-    List.indexedMap updateRow grid
+    case Array.get row grid of
+        Nothing ->
+            grid
+
+        Just rowArr ->
+            let
+                newRow =
+                    case Array.get col rowArr of
+                        Nothing ->
+                            rowArr
+
+                        Just cell ->
+                            Array.set col (if cell == Alive then Dead else Alive) rowArr
+            in
+            Array.set row newRow grid
 
 -- Obtener tamaño de la grilla
 getSize : Grid -> (Int, Int)
 getSize grid =
     let
-        height = List.length grid
-        width = 
-            case List.head grid of
-                Just firstRow -> List.length firstRow
-                Nothing -> 0
+        height = Array.length grid
+        width =
+            grid
+                |> Array.get 0
+                |> Maybe.map Array.length
+                |> Maybe.withDefault 0
     in
     (width, height)

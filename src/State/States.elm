@@ -7,6 +7,7 @@ import Core.Types exposing (..)
 import Core.PatternAnalysis
 import Time
 import Random
+import Array
 
 -- 1. MENSAJES
 -- Definimos todo lo que puede ocurrir en la aplicación
@@ -16,6 +17,11 @@ type Msg
     | SetRuleInput String
     | ToggleConfigCell Position
     | StartSimulation
+    | SetWidthInput String
+    | SetHeightInput String
+    | ApplyGridSize
+    | SetBorderType BorderType
+    | SetCellSize Int
     -- Acciones de Simulación
     | Tick Time.Posix
     | TogglePlay
@@ -36,6 +42,7 @@ init =
         defaultHeight = 30
         defaultRules = { birth = [3], survive = [2, 3] } -- Conway clásico
         defaultRuleStr = "B3/S23"
+        defaultCellSize = 20
         
         initialConfig = 
             { grid = emptyGrid defaultWidth defaultHeight
@@ -43,16 +50,22 @@ init =
             , ruleInput = defaultRuleStr
             , width = defaultWidth
             , height = defaultHeight
+            , widthInput = String.fromInt defaultWidth
+            , heightInput = String.fromInt defaultHeight
+            , borderType = Toroidal
+            , cellSize = defaultCellSize
             }
 
         initialSimulation =
-            { grid = [] -- Se llenará al iniciar
+            { grid = emptyGrid defaultWidth defaultHeight
             , rules = defaultRules
             , generation = 0
             , isPlaying = False
             , history = []
             , detectedPattern = UnknownPattern
             , analysisEnabled = True
+            , borderType = Toroidal
+            , cellSize = defaultCellSize
             }
     in
     ( { currentPage = ConfigPage
@@ -106,6 +119,8 @@ update msg model =
                     , history = []
                     , detectedPattern = UnknownPattern
                     , analysisEnabled = True
+                    , borderType = config.borderType
+                    , cellSize = config.cellSize
                     }
             in
             ( { model 
@@ -114,6 +129,60 @@ update msg model =
               }
             , Cmd.none 
             )
+
+        SetWidthInput str ->
+            let
+                config = model.configState
+                newConfig = { config | widthInput = str }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
+
+        SetHeightInput str ->
+            let
+                config = model.configState
+                newConfig = { config | heightInput = str }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
+
+        ApplyGridSize ->
+            let
+                config = model.configState
+                newWidth = 
+                    config.widthInput 
+                        |> String.toInt 
+                        |> Maybe.withDefault config.width
+                        |> clamp 1 100
+                newHeight = 
+                    config.heightInput 
+                        |> String.toInt 
+                        |> Maybe.withDefault config.height
+                        |> clamp 1 100
+                newGrid = emptyGrid newWidth newHeight
+                newConfig = 
+                    { config 
+                    | width = newWidth
+                    , height = newHeight
+                    , widthInput = String.fromInt newWidth
+                    , heightInput = String.fromInt newHeight
+                    , grid = newGrid 
+                    }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
+
+        SetBorderType borderType ->
+            let
+                config = model.configState
+                newConfig = { config | borderType = borderType }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
+
+        SetCellSize size ->
+            let
+                config = model.configState
+                newSize = clamp 5 40 size
+                newConfig = { config | cellSize = newSize }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
 
         -------------------------
         -- Lógica de Simulación
@@ -134,7 +203,7 @@ update msg model =
         StepGeneration ->
             let
                 sim = model.simulationState
-                newGrid = nextGeneration sim.rules sim.grid
+                newGrid = nextGeneration sim.borderType sim.rules sim.grid
                 newHistory = 
                     (sim.grid :: sim.history)
                         |> List.take 20
@@ -253,11 +322,13 @@ randomGridGenerator width height =
         cellGenerator =
             Random.weighted (20, Alive) [ (80, Dead) ]
         
-        -- Generador para una fila (lista de celdas)
+        -- Generador para una fila (array de celdas)
         rowGenerator =
             Random.list width cellGenerator
+                |> Random.map Array.fromList
     in
-    -- Generador para la grilla (lista de filas)
+    -- Generador para la grilla (array de filas)
     Random.list height rowGenerator
+        |> Random.map Array.fromList
 
     

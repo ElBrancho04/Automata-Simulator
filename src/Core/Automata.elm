@@ -1,18 +1,19 @@
 module Core.Automata exposing (..)
 
+import Array
 import Core.Grid exposing (countLiveNeighbors)
 import Core.Rules exposing (applyRule)
-import Core.Types exposing (Grid, Rules)
+import Core.Types exposing (Grid, Rules, BorderType)
 
-nextGeneration : Rules -> Grid -> Grid
-nextGeneration rules grid =
-    List.indexedMap
+nextGeneration : BorderType -> Rules -> Grid -> Grid
+nextGeneration borderType rules grid =
+    Array.indexedMap
         (\rowIndex row ->
-            List.indexedMap
+            Array.indexedMap
                 (\colIndex cell ->
                     let
-                        liveNeighbors = 
-                            countLiveNeighbors (rowIndex, colIndex) grid
+                        liveNeighbors =
+                            countLiveNeighbors borderType (rowIndex, colIndex) grid
                     in
                     applyRule rules cell liveNeighbors
                 )

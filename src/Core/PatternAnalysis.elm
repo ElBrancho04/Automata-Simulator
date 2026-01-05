@@ -1,5 +1,6 @@
 module Core.PatternAnalysis exposing (analyzePattern)
 
+import Array
 import Core.Types exposing (..)
 import Core.Grid exposing (countLiveCells, getSize)
 
@@ -16,9 +17,8 @@ getCyclicCell row col grid =
         wrappedCol = modBy width col
     in
     grid
-        |> List.drop wrappedRow
-        |> List.head
-        |> Maybe.andThen (List.drop wrappedCol >> List.head)
+        |> Array.get wrappedRow
+        |> Maybe.andThen (Array.get wrappedCol)
         |> Maybe.withDefault Dead
 
 -- Verificar si grid2 es grid1 trasladada por (dx, dy)

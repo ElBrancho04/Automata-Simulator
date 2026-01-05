@@ -1,5 +1,6 @@
 module View.Main exposing (main)
 
+import Array
 import Browser
 import Core.Patterns
 import Core.Rules exposing (isValidRuleString)
@@ -120,14 +121,214 @@ viewConfigPage config =
             , style "align-items" "flex-start"
             , style "flex-wrap" "wrap"
             ]
-            [ viewGrid config.grid True
+            [ -- Columna izquierda: Zoom + Grilla
+              div 
+                [ style "display" "flex"
+                , style "flex-direction" "column"
+                , style "gap" "15px"
+                , style "align-items" "center"
+                ]
+                [ -- Control de zoom encima de la grilla
+                  div 
+                    [ style "display" "flex"
+                    , style "gap" "10px"
+                    , style "align-items" "center"
+                    , style "padding" "10px 20px"
+                    , style "background-color" "#f7fafc"
+                    , style "border-radius" "8px"
+                    , style "border" "2px solid #e2e8f0"
+                    ]
+                    [ span 
+                        [ style "font-weight" "600"
+                        , style "color" "#4a5568"
+                        , style "font-size" "0.9em"
+                        ] 
+                        [ text "🔍 Zoom:" ]
+                    , button
+                        [ onClick (SetCellSize (config.cellSize - 5))
+                        , disabled (config.cellSize <= 5)
+                        , style "padding" "6px 12px"
+                        , style "font-size" "1.1em"
+                        , style "font-weight" "600"
+                        , style "cursor" (if config.cellSize <= 5 then "not-allowed" else "pointer")
+                        , style "background-color" (if config.cellSize <= 5 then "#cbd5e0" else "#4299e1")
+                        , style "color" "white"
+                        , style "border" "none"
+                        , style "border-radius" "6px"
+                        ]
+                        [ text "-" ]
+                    , span 
+                        [ style "font-weight" "600"
+                        , style "color" "#2d3748"
+                        , style "min-width" "50px"
+                        , style "text-align" "center"
+                        ] 
+                        [ text (String.fromInt config.cellSize ++ "px") ]
+                    , button
+                        [ onClick (SetCellSize (config.cellSize + 5))
+                        , disabled (config.cellSize >= 40)
+                        , style "padding" "6px 12px"
+                        , style "font-size" "1.1em"
+                        , style "font-weight" "600"
+                        , style "cursor" (if config.cellSize >= 40 then "not-allowed" else "pointer")
+                        , style "background-color" (if config.cellSize >= 40 then "#cbd5e0" else "#4299e1")
+                        , style "color" "white"
+                        , style "border" "none"
+                        , style "border-radius" "6px"
+                        ]
+                        [ text "+" ]
+                    ]
+                -- Panel de la grilla con scroll horizontal y vertical
+                , div 
+                    [ style "width" "650px"
+                    , style "height" "650px"
+                    , style "overflow" "auto"
+                    , style "border" "2px solid #e2e8f0"
+                    , style "border-radius" "8px"
+                    , style "background-color" "#f7fafc"
+                    ]
+                    [ div 
+                        [ style "display" "inline-block"
+                        , style "min-width" "100%"
+                        , style "min-height" "100%"
+                        ]
+                        [ viewGridWithSize config.grid True config.cellSize ]
+                    ]
+                ]
             , div 
                 [ style "display" "flex"
                 , style "flex-direction" "column"
                 , style "gap" "20px"
                 , style "max-width" "300px"
                 ]
-                [ div 
+                [ -- Control de tamaño de grilla
+                  div 
+                    [ style "padding" "25px"
+                    , style "background-color" "#f7fafc"
+                    , style "border-radius" "12px"
+                    , style "border" "2px solid #e2e8f0"
+                    ]
+                    [ h3 
+                        [ style "margin" "0 0 15px 0"
+                        , style "color" "#2d3748"
+                        , style "font-size" "1.2em"
+                        , style "font-weight" "600"
+                        ] 
+                        [ text "📐 Tamaño de Grilla" ]
+                    , span 
+                        [ style "display" "block"
+                        , style "color" "#a0aec0"
+                        , style "font-size" "0.85em"
+                        , style "margin-bottom" "12px"
+                        ]
+                        [ text ("Actual: " ++ String.fromInt config.width ++ " × " ++ String.fromInt config.height) ]
+                    , div [ style "display" "flex", style "gap" "15px", style "align-items" "center", style "flex-wrap" "wrap" ]
+                        [ div []
+                            [ label 
+                                [ style "font-weight" "600"
+                                , style "color" "#4a5568"
+                                , style "font-size" "0.9em"
+                                ] 
+                                [ text "Ancho:" ]
+                            , input
+                                [ type_ "number"
+                                , Html.Attributes.min "1"
+                                , Html.Attributes.max "100"
+                                , value config.widthInput
+                                , onInput SetWidthInput
+                                , style "width" "70px"
+                                , style "padding" "8px"
+                                , style "border-radius" "6px"
+                                , style "border" "2px solid #e2e8f0"
+                                , style "font-size" "1em"
+                                , style "margin-left" "8px"
+                                ]
+                                []
+                            ]
+                        , div []
+                            [ label 
+                                [ style "font-weight" "600"
+                                , style "color" "#4a5568"
+                                , style "font-size" "0.9em"
+                                ] 
+                                [ text "Alto:" ]
+                            , input
+                                [ type_ "number"
+                                , Html.Attributes.min "1"
+                                , Html.Attributes.max "100"
+                                , value config.heightInput
+                                , onInput SetHeightInput
+                                , style "width" "70px"
+                                , style "padding" "8px"
+                                , style "border-radius" "6px"
+                                , style "border" "2px solid #e2e8f0"
+                                , style "font-size" "1em"
+                                , style "margin-left" "8px"
+                                ]
+                                []
+                            ]
+                        ]
+                    , button
+                        [ onClick ApplyGridSize
+                        , style "margin-top" "15px"
+                        , style "padding" "10px 20px"
+                        , style "font-size" "0.95em"
+                        , style "font-weight" "600"
+                        , style "cursor" "pointer"
+                        , style "background-color" "#48bb78"
+                        , style "color" "white"
+                        , style "border" "none"
+                        , style "border-radius" "8px"
+                        , style "width" "100%"
+                        ]
+                        [ text "✓ Aplicar Tamaño" ]
+                    ]
+                
+                -- Control de tipo de borde
+                , div 
+                    [ style "padding" "25px"
+                    , style "background-color" "#f7fafc"
+                    , style "border-radius" "12px"
+                    , style "border" "2px solid #e2e8f0"
+                    ]
+                    [ h3 
+                        [ style "margin" "0 0 15px 0"
+                        , style "color" "#2d3748"
+                        , style "font-size" "1.2em"
+                        , style "font-weight" "600"
+                        ] 
+                        [ text "🔲 Tipo de Borde" ]
+                    , div [ style "display" "flex", style "gap" "10px" ]
+                        [ button
+                            [ onClick (SetBorderType Toroidal)
+                            , style "padding" "10px 16px"
+                            , style "font-size" "0.95em"
+                            , style "font-weight" "600"
+                            , style "cursor" "pointer"
+                            , style "background-color" (if config.borderType == Toroidal then "#4299e1" else "#e2e8f0")
+                            , style "color" (if config.borderType == Toroidal then "white" else "#4a5568")
+                            , style "border" "none"
+                            , style "border-radius" "8px"
+                            , style "transition" "all 0.2s"
+                            ]
+                            [ text "🌐 Toroidal" ]
+                        , button
+                            [ onClick (SetBorderType Finite)
+                            , style "padding" "10px 16px"
+                            , style "font-size" "0.95em"
+                            , style "font-weight" "600"
+                            , style "cursor" "pointer"
+                            , style "background-color" (if config.borderType == Finite then "#4299e1" else "#e2e8f0")
+                            , style "color" (if config.borderType == Finite then "white" else "#4a5568")
+                            , style "border" "none"
+                            , style "border-radius" "8px"
+                            , style "transition" "all 0.2s"
+                            ]
+                            [ text "📦 Finito" ]
+                        ]
+                    ]
+                
+                , div 
                     [ style "padding" "25px"
                     , style "background-color" "#f7fafc"
                     , style "border-radius" "12px"
@@ -250,6 +451,27 @@ viewSimulationPage sim =
                         ] 
                         [ text (if sim.isPlaying then "▶️ Ejecutando" else "⏸️ Pausado") ]
                     ]
+                , div 
+                    [ style "width" "2px"
+                    , style "height" "50px"
+                    , style "background-color" "#e2e8f0"
+                    ] 
+                    []
+                , div []
+                    [ div 
+                        [ style "font-size" "0.85em"
+                        , style "color" "#718096"
+                        , style "font-weight" "600"
+                        , style "margin-bottom" "5px"
+                        ] 
+                        [ text "BORDE" ]
+                    , div 
+                        [ style "font-size" "1em"
+                        , style "color" "#2d3748"
+                        , style "font-weight" "600"
+                        ] 
+                        [ text (if sim.borderType == Toroidal then "🌐 Toroidal" else "📦 Finito") ]
+                    ]
                 ]
             ]
         
@@ -260,7 +482,22 @@ viewSimulationPage sim =
             , style "align-items" "flex-start"
             , style "flex-wrap" "wrap"
             ]
-            [ viewGrid sim.grid False
+            [ -- Panel de la grilla con scroll horizontal y vertical
+              div 
+                                [ style "width" "650px"
+                                , style "height" "650px"
+                , style "overflow" "auto"
+                , style "border" "2px solid #e2e8f0"
+                , style "border-radius" "8px"
+                , style "background-color" "#f7fafc"
+                ]
+                [ div 
+                    [ style "display" "inline-block"
+                    , style "min-width" "100%"
+                    , style "min-height" "100%"
+                    ]
+                    [ viewGridWithSize sim.grid False sim.cellSize ]
+                ]
             , div 
                 [ style "display" "flex"
                 , style "flex-direction" "column"
@@ -375,8 +612,8 @@ viewSimulationPage sim =
             ]
         ]
 
-viewGrid : Grid -> Bool -> Html Msg
-viewGrid grid isInteractive =
+viewGridWithSize : Grid -> Bool -> Int -> Html Msg
+viewGridWithSize grid isInteractive cellSize =
     div
         [ style "display" "inline-block"
         , style "border" "3px solid #2d3748"
@@ -384,18 +621,21 @@ viewGrid grid isInteractive =
         , style "overflow" "hidden"
         , style "box-shadow" "0 8px 20px rgba(0,0,0,0.15)"
         ]
-        (List.indexedMap (viewRow isInteractive) grid)
+        (grid |> Array.toList |> List.indexedMap (viewRowWithSize isInteractive cellSize))
 
-viewRow : Bool -> Int -> List Cell -> Html Msg
-viewRow isInteractive rowIndex cells =
+viewRowWithSize : Bool -> Int -> Int -> Array.Array Cell -> Html Msg
+viewRowWithSize isInteractive cellSize rowIndex cells =
     div [ style "display" "flex" ]
-        (List.indexedMap (viewCell isInteractive rowIndex) cells)
+        (cells |> Array.toList |> List.indexedMap (viewCellWithSize isInteractive cellSize rowIndex))
 
-viewCell : Bool -> Int -> Int -> Cell -> Html Msg
-viewCell isInteractive rowIndex colIndex cell =
+viewCellWithSize : Bool -> Int -> Int -> Int -> Cell -> Html Msg
+viewCellWithSize isInteractive cellSize rowIndex colIndex cell =
+    let
+        sizeStr = String.fromInt cellSize ++ "px"
+    in
     div
-        [ style "width" "20px"
-        , style "height" "20px"
+        [ style "width" sizeStr
+        , style "height" sizeStr
         , style "border" "1px solid #e2e8f0"
         , style "background-color" (if cell == Alive then "#2d3748" else "#ffffff")
         , style "cursor" (if isInteractive then "pointer" else "default")
