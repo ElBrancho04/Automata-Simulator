@@ -1,7 +1,6 @@
 module View.Main exposing (main)
 
 import Browser
-import Core.Grid exposing (getSize)
 import Core.Patterns
 import Core.Rules exposing (isValidRuleString)
 import Core.Types exposing (..)
@@ -104,6 +103,24 @@ viewSimulationPage sim =
         [ div [ style "font-size" "1.2em" ] 
             [ text ("Generación: " ++ String.fromInt sim.generation) ]
         
+        -- Panel de patrón detectado
+        , div 
+            [ style "margin" "10px 0"
+            , style "padding" "8px 12px"
+            , style "background-color" "#f0f8ff"
+            , style "border-radius" "6px"
+            , style "border" "1px solid #ccc"
+            , style "font-size" "0.9em"
+            , style "min-height" "40px"
+            ]
+            [ text ("🔍 " ++ patternToString sim.detectedPattern)
+            , if sim.generation < 2 then
+                div [ style "font-size" "0.8em", style "color" "#666", style "margin-top" "4px" ]
+                    [ text "Necesita más generaciones para analizar" ]
+              else
+                text ""
+            ]
+        
         -- La Grilla (Solo lectura)
         , viewGrid sim.grid False
 
@@ -133,6 +150,20 @@ viewSimulationPage sim =
                 , style "border" "none"
                 ]
                 [ text "⏹ Detener / Configurar" ]
+            ]
+        
+        -- Control de análisis de patrones
+        , div [ style "display" "flex", style "gap" "10px", style "margin-top" "10px" ]
+            [ button 
+                [ onClick TogglePatternAnalysis
+                , style "padding" "10px 20px"
+                , style "cursor" "pointer"
+                , style "background-color" (if sim.analysisEnabled then "#4CAF50" else "#ccc")
+                , style "color" "white"
+                , style "border" "none"
+                ] 
+                [ text (if sim.analysisEnabled then "🔍 Análisis ON" else "👁️‍🗨️ Análisis OFF") 
+                ]
             ]
         , div [ style "font-size" "0.9em", style "color" "#666" ]
             [ text (if sim.isPlaying then "Simulando cada 0.5s..." else "Simulación pausada.") ]

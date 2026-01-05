@@ -7,6 +7,30 @@ type alias Position = (Int, Int)
 
 type Page = ConfigPage | SimulationPage
 
+-- Tipos para detección de patrones
+type PatternType
+    = UnknownPattern
+    | StaticPattern
+    | Oscillator Int
+    | Spaceship (Int, Int) Int
+    | GrowingPattern
+    | DyingPattern
+    | ChaoticPattern
+    | GliderGunPattern Int
+
+-- Convertir patrón a string para mostrar
+patternToString : PatternType -> String
+patternToString pattern =
+    case pattern of
+        UnknownPattern -> "Analizando..."
+        StaticPattern -> "🔘 Estático"
+        Oscillator p -> "🔄 Oscilador (período " ++ String.fromInt p ++ ")"
+        Spaceship (dx, dy) period -> "🚀 Nave (" ++ String.fromInt dx ++ "," ++ String.fromInt dy ++ ") cada " ++ String.fromInt period ++ " gen"
+        GrowingPattern -> "📈 Creciendo"
+        DyingPattern -> "📉 Extinguiéndose"
+        ChaoticPattern -> "🌀 Caótico"
+        GliderGunPattern p -> "🔫 Generador de planeadores (período " ++ String.fromInt p ++ ")"
+
 type alias ConfigState =
     { grid : Grid
     , rules : Rules
@@ -20,6 +44,10 @@ type alias SimulationState =
     , rules : Rules
     , generation : Int
     , isPlaying : Bool
+    -- Campos para análisis de patrones
+    , history : List Grid
+    , detectedPattern : PatternType
+    , analysisEnabled : Bool
     }
 
 type alias AppState =

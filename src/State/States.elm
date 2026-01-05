@@ -4,9 +4,10 @@ import Core.Automata exposing (nextGeneration)
 import Core.Grid exposing (emptyGrid, toggleCell)
 import Core.Rules exposing (parseRules)
 import Core.Types exposing (..)
-import Core.Patterns 
+import Core.PatternAnalysis
 import Time
 import Random
+
 -- 1. MENSAJES
 -- Definimos todo lo que puede ocurrir en la aplicación
 type Msg
@@ -23,6 +24,8 @@ type Msg
     | RandomizeGrid
     | GridGenerated Grid
     | LoadPattern (List Position)
+    | TogglePatternAnalysis  -- Activar/desactivar análisis de patrones
+
 -- 2. INIT
 -- Estado inicial de la aplicación
 init : ( AppState, Cmd Msg )
@@ -46,6 +49,9 @@ init =
             , rules = defaultRules
             , generation = 0
             , isPlaying = False
+            , history = []
+            , detectedPattern = UnknownPattern
+            , analysisEnabled = True
             }
     in
     ( { currentPage = ConfigPage
@@ -96,6 +102,9 @@ update msg model =
                     , rules = config.rules
                     , generation = 0
                     , isPlaying = False
+                    , history = []
+                    , detectedPattern = UnknownPattern
+                    , analysisEnabled = True
                     }
             in
             ( { model 
@@ -125,10 +134,20 @@ update msg model =
             let
                 sim = model.simulationState
                 newGrid = nextGeneration sim.rules sim.grid
+                newHistory = 
+                    (sim.grid :: sim.history)
+                        |> List.take 20
+                newPattern = 
+                    if sim.analysisEnabled && List.length newHistory >= 2 then
+                        Core.PatternAnalysis.analyzePattern newHistory
+                    else
+                        sim.detectedPattern
                 newSim = 
                     { sim 
                     | grid = newGrid
                     , generation = sim.generation + 1
+                    , history = newHistory
+                    , detectedPattern = newPattern
                     }
             in
             ( { model | simulationState = newSim }, Cmd.none )
@@ -184,6 +203,14 @@ update msg model =
                 newConfig = { config | grid = newGrid }
             in
             ( { model | configState = newConfig }, Cmd.none )
+
+        TogglePatternAnalysis ->
+            let
+                sim = model.simulationState
+                newSim = { sim | analysisEnabled = not sim.analysisEnabled }
+            in
+            ( { model | simulationState = newSim }, Cmd.none )
+
 -- 4. SUBSCRIPTIONS
 -- Aquí manejamos el "loop" de tiempo cuando el juego está corriendo
 subscriptions : AppState -> Sub Msg
