@@ -105,7 +105,9 @@ detectGliderGun history =
                         List.map2 (\a b -> abs (countLiveCells a - countLiveCells b)) 
                             (List.drop 1 grids) 
                             grids
-                    avgChange = List.sum changes // List.length changes
+                    avgChange = 
+                        if List.isEmpty changes then 0
+                        else List.sum changes // List.length changes
                 in
                 if avgChange > 5 then
                     Just 15  -- Asumir período típico de generadores
@@ -117,47 +119,90 @@ detectGliderGun history =
     else
         Nothing
 
+-- Función auxiliar para calcular promedio
+average : List Int -> Float
+average list =
+    if List.isEmpty list then
+        0
+    else
+        toFloat (List.sum list) / toFloat (List.length list)
+
 -- Analizar tendencia de crecimiento/extinción
 detectTrend : List Grid -> PatternType
 detectTrend history =
     let
         counts = List.map countLiveCells history
         totalGenerations = List.length counts
-        firstCount = Maybe.withDefault 0 (List.head counts)
         lastCount = 
-            case List.reverse counts of
-                [] -> 0
-                x :: _ -> x
-        
-        minCount = Maybe.withDefault 0 (List.minimum counts)
-        maxCount = Maybe.withDefault 0 (List.maximum counts)
-        range = maxCount - minCount
-        avgCount = 
-            if totalGenerations == 0 then 0
-            else List.sum counts // totalGenerations
-        
-        -- Calcular cambios entre generaciones
-        changes = 
-            List.map2 (\a b -> abs (a - b)) 
-                (List.drop 1 counts) 
-                counts
-        avgChange = 
-            if List.length changes == 0 then 0
-            else List.sum changes // List.length changes
+            case List.head counts of
+                Just c -> c
+                Nothing -> 0
     in
     if totalGenerations < 8 then
         UnknownPattern
-    else if lastCount == 0 && totalGenerations > 5 then
+    
+    else if lastCount == 0 then
         DyingPattern
-    else if lastCount > firstCount * 3 && lastCount > 30 && totalGenerations > 8 then
-        GrowingPattern
-    else if range > 25 && avgChange > 5 && avgCount > 10 then
-        ChaoticPattern
-    else if totalGenerations > 15 then
-        -- Después de 15 generaciones sin patrón claro, probablemente caótico
-        ChaoticPattern
+    
+    else if totalGenerations >= 10 then
+        let
+            last6 = List.take 6 counts
+            
+            last3 = List.take 3 last6
+            previous3 = List.take 3 (List.drop 3 last6)
+            
+            avgLast3 = average last3
+            avgPrevious3 = average previous3
+            
+            maxLast6 = Maybe.withDefault 0 (List.maximum last6)
+            minLast6 = Maybe.withDefault 0 (List.minimum last6)
+            
+            rangeLast6 = maxLast6 - minLast6
+            
+            changes = 
+                List.map2 (\a b -> abs (a - b)) 
+                    (List.drop 1 last6) 
+                    last6
+            avgChange = average changes
+            
+            changePercent = 
+                if avgPrevious3 > 0 then
+                    ((avgLast3 - avgPrevious3) / avgPrevious3) * 100
+                else
+                    0
+        in
+        if avgLast3 > avgPrevious3 && 
+           changePercent > 15 then
+            GrowingPattern
+        
+        else if avgLast3 < avgPrevious3 && 
+                changePercent < -15 then
+            DyingPattern
+        
+        else if avgChange > avgLast3 * 0.3 &&
+                toFloat rangeLast6 > avgLast3 * 0.6 then
+            ChaoticPattern
+        
+        else if totalGenerations > 18 then
+            ChaoticPattern
+        
+        else
+            UnknownPattern
+    
     else
-        UnknownPattern
+        let
+            firstHalf = List.drop (totalGenerations // 2) counts
+            secondHalf = List.take (totalGenerations // 2) counts
+            
+            avgFirst = average firstHalf
+            avgSecond = average secondHalf
+        in
+        if avgSecond > avgFirst * 1.5 then
+            GrowingPattern
+        else if avgSecond < avgFirst * 0.5 && avgSecond < 10 then
+            DyingPattern
+        else
+            UnknownPattern
 
 -- Función principal de análisis de patrones
 analyzePattern : List Grid -> PatternType
