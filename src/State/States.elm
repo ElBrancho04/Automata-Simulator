@@ -24,7 +24,8 @@ type Msg
     | RandomizeGrid
     | GridGenerated Grid
     | LoadPattern (List Position)
-    | TogglePatternAnalysis  -- Activar/desactivar análisis de patrones
+    | TogglePatternAnalysis
+    | ResetToConwayDefaults
 
 -- 2. INIT
 -- Estado inicial de la aplicación
@@ -210,6 +211,24 @@ update msg model =
                 newSim = { sim | analysisEnabled = not sim.analysisEnabled }
             in
             ( { model | simulationState = newSim }, Cmd.none )
+
+        ResetToConwayDefaults ->
+            let
+                config = model.configState
+                conwayRules = { birth = [3], survive = [2, 3] }
+                conwayRuleStr = "B3/S23"
+                
+                -- Crear nueva grilla vacía del mismo tamaño
+                newGrid = emptyGrid config.width config.height
+                
+                newConfig = 
+                    { config 
+                        | grid = newGrid
+                        , rules = conwayRules
+                        , ruleInput = conwayRuleStr
+                    }
+            in
+            ( { model | configState = newConfig }, Cmd.none )
 
 -- 4. SUBSCRIPTIONS
 -- Aquí manejamos el "loop" de tiempo cuando el juego está corriendo

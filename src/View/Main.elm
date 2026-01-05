@@ -41,18 +41,29 @@ viewConfigPage config =
         [ h3 [] [ text "Configuración Inicial" ]
         , div []
             [ text "Dibuja el patrón inicial haciendo click en las celdas." ]
-        , div [ style "display" "flex", style "gap" "10px", style "margin-bottom" "10px" ]
+        , div [ style "display" "flex", style "gap" "10px", style "margin-bottom" "10px", style "flex-wrap" "wrap" ]
             [ button
                 [ onClick RandomizeGrid
                 , style "padding" "8px 15px"
                 , style "cursor" "pointer"
-                , style "background-color" "#2196F3" -- Azul
+                , style "background-color" "#2196F3"
                 , style "color" "white"
                 , style "border" "none"
                 , style "border-radius" "4px"
                 ]
                 [ text "🎲 Aleatorio" ]
-            ]    
+            
+            , button
+                [ onClick ResetToConwayDefaults
+                , style "padding" "8px 15px"
+                , style "cursor" "pointer"
+                , style "background-color" "#2196F3"
+                , style "color" "white"
+                , style "border" "none"
+                , style "border-radius" "4px"
+                ]
+                [ text "💫 Reset" ]
+            ] 
 
         , div [ style "margin-bottom" "10px" ]
     [ text "Patrones: "
@@ -96,30 +107,32 @@ viewConfigPage config =
             [ text "Iniciar Simulación" ]
         ]
 
--- 4. VISTA SIMULACIÓN
+-- 4. VISTA SIMULACIÓN - MODIFICAR SECCIÓN DE PATRÓN DETECTADO
 viewSimulationPage : SimulationState -> Html Msg
 viewSimulationPage sim =
     div [ style "display" "flex", style "flex-direction" "column", style "align-items" "center", style "gap" "15px" ]
         [ div [ style "font-size" "1.2em" ] 
             [ text ("Generación: " ++ String.fromInt sim.generation) ]
         
-        -- Panel de patrón detectado
-        , div 
-            [ style "margin" "10px 0"
-            , style "padding" "8px 12px"
-            , style "background-color" "#f0f8ff"
-            , style "border-radius" "6px"
-            , style "border" "1px solid #ccc"
-            , style "font-size" "0.9em"
-            , style "min-height" "40px"
-            ]
-            [ text ("🔍 " ++ patternToString sim.detectedPattern)
-            , if sim.generation < 2 then
-                div [ style "font-size" "0.8em", style "color" "#666", style "margin-top" "4px" ]
-                    [ text "Necesita más generaciones para analizar" ]
-              else
-                text ""
-            ]
+        , if sim.analysisEnabled then
+            div 
+                [ style "margin" "10px 0"
+                , style "padding" "8px 12px"
+                , style "background-color" "#f0f8ff"
+                , style "border-radius" "6px"
+                , style "border" "1px solid #ccc"
+                , style "font-size" "0.9em"
+                , style "min-height" "40px"
+                ]
+                [ text ("🔍 " ++ patternToString sim.detectedPattern)
+                , if sim.generation < 2 then
+                    div [ style "font-size" "0.8em", style "color" "#666", style "margin-top" "4px" ]
+                        [ text "Necesita más generaciones para analizar" ]
+                  else
+                    text ""
+                ]
+          else
+            text ""
         
         -- La Grilla (Solo lectura)
         , viewGrid sim.grid False
