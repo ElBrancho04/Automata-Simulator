@@ -94,7 +94,7 @@ acorn =
         ]
 
 
--- 7. ANTS (patrón caótico)
+-- 7. ANTS (Patrón que decrece hasta estabilizarse en un cuadrado 2x2)
 ants : List Position
 ants =
     fromMatrix

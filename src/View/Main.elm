@@ -120,7 +120,7 @@ viewConfigPage config =
                     ]
 
                 , patternGroup "🌀 Caóticos / Generadores"
-                    [ viewPatternButtonWithTitle "🐜 Ants" "Patrón caótico" (LoadPattern Core.Patterns.ants)
+                    [ viewPatternButtonWithTitle "🐜 Ants" "Decrece hasta cuadrado 2x2" (LoadPattern Core.Patterns.ants)
                     , viewPatternButtonWithTitle "🔫 Gosper Gun" "Generador de planeadores (per. ~30)" (LoadPattern Core.Patterns.gosperGliderGun)
                     ]
                 ]
