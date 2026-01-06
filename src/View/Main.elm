@@ -102,15 +102,27 @@ viewConfigPage config =
                 , style "font-weight" "600"
                 ] 
                 [ text "📦 Patrones Predefinidos" ]
-            , div 
-                [ style "display" "flex"
-                , style "gap" "12px"
-                , style "flex-wrap" "wrap"
-                , style "justify-content" "center"
-                ]
-                [ viewPatternButton "🚀 Glider" (LoadPattern Core.Patterns.glider)
-                , viewPatternButton "🛸 Nave Ligera" (LoadPattern Core.Patterns.lwss)
-                , viewPatternButton "✨ Pulsar" (LoadPattern Core.Patterns.pulsar)
+            , div [ style "display" "flex", style "flex-direction" "column", style "gap" "16px" ]
+                [ patternGroup "🚀 Naves" 
+                    [ viewPatternButtonWithTitle "🚀 Glider" "Nave pequeña (diagonal)" (LoadPattern Core.Patterns.glider)
+                    , viewPatternButtonWithTitle "🛸 LWSS" "Nave ligera (horizontal)" (LoadPattern Core.Patterns.lwss)
+                    ]
+
+                , patternGroup "🔁 Osciladores"
+                    [ viewPatternButtonWithTitle "✨ Pulsar" "Oscilador período 3" (LoadPattern Core.Patterns.pulsar)
+                    , viewPatternButtonWithTitle "💠 Diamond Ring" "Oscilador período 2" (LoadPattern Core.Patterns.diamondRing)
+                    , viewPatternButtonWithTitle "🍽️ Dinner Table" "Oscilador período 2" (LoadPattern Core.Patterns.dinnerTable)
+                    ]
+
+                , patternGroup "🌱 Crecimiento / Longevos"
+                    [ viewPatternButtonWithTitle "🌰 Acorn" "Explosión grande (~5200 gen)" (LoadPattern Core.Patterns.acorn)
+                    , viewPatternButtonWithTitle "� Diehard" "Muere cerca de 130 gen" (LoadPattern Core.Patterns.diehard)
+                    ]
+
+                , patternGroup "🌀 Caóticos / Generadores"
+                    [ viewPatternButtonWithTitle "🐜 Ants" "Patrón caótico" (LoadPattern Core.Patterns.ants)
+                    , viewPatternButtonWithTitle "🔫 Gosper Gun" "Generador de planeadores (per. ~30)" (LoadPattern Core.Patterns.gosperGliderGun)
+                    ]
                 ]
             ]
         
@@ -669,12 +681,33 @@ viewButton label msg buttonType =
         ]
         [ text label ]
 
-viewPatternButton : String -> Msg -> Html Msg
-viewPatternButton label msg =
+patternGroup : String -> List (Html Msg) -> Html Msg
+patternGroup titleLabel buttons =
+    div []
+        [ div
+            [ style "font-size" "0.9em"
+            , style "font-weight" "700"
+            , style "color" "#4a5568"
+            , style "margin" "0 0 8px 0"
+            ]
+            [ text titleLabel ]
+        , div
+            [ style "display" "flex"
+            , style "gap" "10px"
+            , style "flex-wrap" "wrap"
+            , style "justify-content" "center"
+            ]
+            buttons
+        ]
+
+
+viewPatternButtonWithTitle : String -> String -> Msg -> Html Msg
+viewPatternButtonWithTitle label tooltip msg =
     button
         [ onClick msg
-        , style "padding" "10px 20px"
-        , style "font-size" "0.95em"
+        , title tooltip
+        , style "padding" "10px 16px"
+        , style "font-size" "0.92em"
         , style "font-weight" "600"
         , style "cursor" "pointer"
         , style "background-color" "#805ad5"

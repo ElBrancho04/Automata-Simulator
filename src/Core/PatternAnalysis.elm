@@ -24,57 +24,70 @@ getCyclicCell row col grid =
 -- Verificar si grid2 es grid1 trasladada por (dx, dy)
 isTranslatedBy : Grid -> Grid -> Int -> Int -> Bool
 isTranslatedBy grid1 grid2 dx dy =
-    let
-        (width, height) = getSize grid1
-        coordinates = 
-            List.range 0 (height - 1) 
-                |> List.concatMap (\r -> 
-                    List.range 0 (width - 1) |> List.map (\c -> (r, c))
+    let 
+        liveCells1 =
+            Array.toIndexedList grid1
+                |> List.concatMap (\(r, row) ->
+                    Array.toIndexedList row
+                        |> List.filterMap (\(c, cell) ->
+                            if cell == Alive then Just (r, c) else Nothing
+                        )
                 )
+        
+        allMatch =
+            List.all
+                (\(r, c) ->
+                    getCyclicCell (r + dy) (c + dx) grid2 == Alive
+                )
+                liveCells1
     in
-    List.all
-        (\(r, c) ->
-            let
-                cell1 = getCyclicCell r c grid1
-                cell2 = getCyclicCell (r + dy) (c + dx) grid2
-            in
-            cell1 == cell2
-        )
-        coordinates
+    allMatch
 
 -- Detectar traslación entre dos grillas
 detectTranslation : Grid -> Grid -> Maybe (Int, Int)
 detectTranslation grid1 grid2 =
     let
-        -- Rangos de búsqueda para traslaciones típicas de naves
-        translations = 
-            [(-2,-2), (-2,-1), (-2,0), (-2,1), (-2,2),
-             (-1,-2), (-1,-1), (-1,0), (-1,1), (-1,2),
-             (0,-2), (0,-1),          (0,1), (0,2),
-             (1,-2), (1,-1), (1,0), (1,1), (1,2),
-             (2,-2), (2,-1), (2,0), (2,1), (2,2)]
+        count1 = countLiveCells grid1
+        count2 = countLiveCells grid2
     in
-    List.foldl
-        (\(dx, dy) found ->
-            case found of
-                Just _ -> found
-                Nothing ->
-                    if isTranslatedBy grid1 grid2 dx dy then
-                        Just (dx, dy)
-                    else
-                        Nothing
-        )
+    if count1 /= count2 then
         Nothing
-        translations
+    else
+        let
+            -- Rangos de búsqueda para traslaciones típicas de naves
+            translations = 
+                [(-2,-2), (-2,-1), (-2,0), (-2,1), (-2,2),
+                 (-1,-2), (-1,-1), (-1,0), (-1,1), (-1,2),
+                 (0,-2), (0,-1),          (0,1), (0,2),
+                 (1,-2), (1,-1), (1,0), (1,1), (1,2),
+                 (2,-2), (2,-1), (2,0), (2,1), (2,2)]
+        in
+        List.foldl
+            (\(dx, dy) found ->
+                case found of
+                    Just _ -> found
+                    Nothing ->
+                        if isTranslatedBy grid1 grid2 dx dy then
+                            Just (dx, dy)
+                        else
+                            Nothing
+            )
+            Nothing
+            translations
 
 -- Detectar oscilación con posible traslación
 detectOscillationWithTranslation : List Grid -> Maybe (Int, (Int, Int))
 detectOscillationWithTranslation history =
     case history of
         current :: rest ->
+            let
+                currentCount = countLiveCells current
+            in
             List.indexedMap (\idx grid -> (idx + 1, grid)) rest
-                |> List.filterMap (\(idx, grid) -> 
-                    if gridsEqual current grid then
+                |> List.filterMap (\(idx, grid) ->
+                    if countLiveCells grid /= currentCount then
+                        Nothing
+                    else if gridsEqual current grid then
                         Just (idx, (0, 0))
                     else
                         case detectTranslation current grid of
@@ -83,41 +96,6 @@ detectOscillationWithTranslation history =
                 )
                 |> List.head
         _ -> Nothing
-
--- Detectar generador de planeadores
-detectGliderGun : List Grid -> Maybe Int
-detectGliderGun history =
-    let
-        isGliderLike grid =
-            let
-                liveCount = countLiveCells grid
-                (w, h) = getSize grid
-            in
-            liveCount > 0 && liveCount < 20 && w >= 5 && h >= 5
-        
-        findEmissionPeriod grids =
-            -- Buscar patrón de emisión cada N generaciones
-            if List.length grids < 10 then
-                Nothing
-            else
-                let
-                    changes = 
-                        List.map2 (\a b -> abs (countLiveCells a - countLiveCells b)) 
-                            (List.drop 1 grids) 
-                            grids
-                    avgChange = 
-                        if List.isEmpty changes then 0
-                        else List.sum changes // List.length changes
-                in
-                if avgChange > 5 then
-                    Just 15  -- Asumir período típico de generadores
-                else
-                    Nothing
-    in
-    if List.any isGliderLike history then
-        findEmissionPeriod history
-    else
-        Nothing
 
 -- Función auxiliar para calcular promedio
 average : List Int -> Float
@@ -225,11 +203,7 @@ analyzePattern history =
                         if (dx /= 0 || dy /= 0) && period <= 20 then
                             Spaceship (dx, dy) period
                         else
-                            case detectGliderGun history of
-                                Just gunPeriod -> GliderGunPattern gunPeriod
-                                Nothing -> detectTrend history
+                            detectTrend history
                     
                     Nothing -> 
-                        case detectGliderGun history of
-                            Just gunPeriod -> GliderGunPattern gunPeriod
-                            Nothing -> detectTrend history
+                        detectTrend history

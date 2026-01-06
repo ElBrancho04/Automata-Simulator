@@ -255,12 +255,34 @@ update msg model =
         LoadPattern patternPositions ->
             let
                 config = model.configState
-                
-                -- Función auxiliar para aplicar offset (para que no aparezca en la esquina 0,0)
-                offset = (5, 5) -- Movemos todo 5 celdas abajo y a la derecha
-                
+
+                -- Offset dinámico: centra el patrón según su bounding box
+                bounds =
+                    case patternPositions of
+                        [] ->
+                            { minR = 0, maxR = 0, minC = 0, maxC = 0 }
+
+                        _ ->
+                            let
+                                rs = List.map Tuple.first patternPositions
+                                cs = List.map Tuple.second patternPositions
+                            in
+                            { minR = Maybe.withDefault 0 (List.minimum rs)
+                            , maxR = Maybe.withDefault 0 (List.maximum rs)
+                            , minC = Maybe.withDefault 0 (List.minimum cs)
+                            , maxC = Maybe.withDefault 0 (List.maximum cs)
+                            }
+
+                patternH = (bounds.maxR - bounds.minR) + 1
+                patternW = (bounds.maxC - bounds.minC) + 1
+
+                (gridW, gridH) = Core.Grid.getSize config.grid
+
+                offsetR = (gridH - patternH) // 2 - bounds.minR
+                offsetC = (gridW - patternW) // 2 - bounds.minC
+
                 adjustedPattern =
-                    List.map (\(r, c) -> (r + Tuple.first offset, c + Tuple.second offset)) patternPositions
+                    List.map (\(r, c) -> (r + offsetR, c + offsetC)) patternPositions
 
                 -- APLICAMOS EL PATRÓN SOBRE LA GRILLA ACTUAL
                 -- Usamos toggleCell repetidamente para cada punto del patrón
